@@ -9,14 +9,13 @@ import io
 # For course submission, it's good practice to ensure all required files are together.
 MODEL_PATH = 'yolo11n.pt'
 DEFAULT_CONFIDENCE = 0.25
-
 # --- Page Configuration (Must be the first Streamlit command) ---
 st.set_page_config(
-    page_title="餐盘智能检测 - 课程作业", # A more formal title for a course assignment
-    layout="centered", # 'centered' or 'wide'
-    initial_sidebar_state="auto" # 'auto', 'expanded', 'collapsed'
-    # icon="" # Removed icon parameter as per request
+    page_title="餐盘智能检测" # 只保留标题，这是最基本的参数
+    # layout="centered", # 暂时注释掉
+    # initial_sidebar_state="auto" # 暂时注释掉
 )
+
 
 # --- Model Loading (Cached for performance) ---
 @st.cache_resource
