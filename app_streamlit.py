@@ -2,114 +2,149 @@ import streamlit as st
 from ultralytics import YOLO
 import PIL.Image
 import os
-import logging
-import io # 用于处理Streamlit上传的文件
+import io
 
-# --- 配置 ---
-MODEL_PATH = 'yolo11n.pt'  # 请确保这是您模型的准确路径
+# --- Configuration ---
+# Make sure yolo11n.pt is in the same directory as this script.
+# For course submission, it's good practice to ensure all required files are together.
+MODEL_PATH = 'yolo11n.pt'
 DEFAULT_CONFIDENCE = 0.25
 
-# --- 日志记录 (Streamlit中可以直接使用st.write, st.info, st.error等，logging也可用于后台) ---
-# logging.basicConfig(level=logging.INFO) # Streamlit运行时，logging输出到控制台
-# logger = logging.getLogger(__name__)
-# 为了在Streamlit界面上更直观，我们将主要使用st的打印功能
+# --- Page Configuration (Must be the first Streamlit command) ---
+st.set_page_config(
+    page_title="餐盘智能检测 - 课程作业", # A more formal title for a course assignment
+    layout="centered", # 'centered' or 'wide'
+    initial_sidebar_state="auto", # 'auto', 'expanded', 'collapsed'
+    icon="🍽️" # Page icon
+)
 
-# --- 模型加载 ---
-# 使用 Streamlit 的缓存功能，确保模型只加载一次
-@st.cache_resource # 对于像模型这样的复杂对象，使用 st.cache_resource
+# --- Model Loading (Cached for performance) ---
+@st.cache_resource
 def load_yolo_model(model_path):
     """
-    加载YOLO模型。如果加载失败返回None和错误信息。
+    Loads the YOLO model. Returns the model and None for error, or None and error message.
     """
-    # logger.info(f"Streamlit: 检查模型文件路径: {model_path}")
     if not os.path.exists(model_path):
-        error_msg = f"错误: 模型文件 {model_path} 未找到。请检查路径。"
-        # logger.error(f"Streamlit: {error_msg}")
-        return None, error_msg
+        return None, f"错误：模型文件 '{model_path}' 未找到。请确保它与 'app_streamlit.py' 在同一目录下。"
     try:
-        # logger.info(f"Streamlit: 尝试从 {model_path} 加载 YOLO 模型...")
-        model = YOLO(model_path)  # 加载您的 YOLO 模型
-        # logger.info(f"Streamlit: 模型 {model_path} 加载成功。")
+        model = YOLO(model_path)
         return model, None
     except Exception as e:
-        error_msg = f"加载模型 {model_path} 时出错: {e}。请确保 Ultralytics 已正确安装，模型文件有效。"
-        # logger.error(f"Streamlit: {error_msg}")
-        return None, error_msg
+        return None, f"加载模型 '{model_path}' 时出错：{e}。\n请检查 Ultralytics 安装和模型文件完整性。"
 
-# 尝试加载模型
+# Attempt to load the model
 model, model_load_error_message = load_yolo_model(MODEL_PATH)
 
-# --- Streamlit 界面 ---
-st.title("YOLO 餐盘检测 (Streamlit Demo)")
+# --- Main Application Interface ---
 
-st.markdown(f"""
-上传一张包含餐盘的图片，模型将会检测并标注出餐盘的位置。
-**模型路径:** `{MODEL_PATH}`
-""")
+st.title("🍽️ 餐盘智能检测系统")
+st.subheader("基于YOLOv8的图像识别应用") # Add a subheader for more context
 
+st.markdown("""
+本项目是基于YOLOv8目标检测模型开发的餐盘识别应用。
+上传一张图片，系统将自动检测并标注出图片中的餐盘。
+""", unsafe_allow_html=True) # Using unsafe_allow_html=True for potential future HTML styling if needed
+
+# Display model loading status only if there's an error
 if model_load_error_message:
-    st.error(f"模型加载失败！错误信息：{model_load_error_message}")
-    st.warning("由于模型未能加载，检测功能将不可用。请检查服务器控制台日志以获取详细信息。")
-    # st.stop() # 如果希望在模型加载失败时完全停止应用
+    st.error(f"**模型加载失败！**\n\n{model_load_error_message}")
+    st.warning("系统核心检测功能不可用。请联系开发者或检查文件路径。")
+    # For a course assignment, you might not want to stop the app entirely,
+    # but rather disable the functionality. This is handled by the 'if model:' block.
 else:
-    if model is not None:
-        st.success(f"模型 {MODEL_PATH} 加载成功！可以开始检测了。")
-    else: # 理论上不应到这里，因为load_yolo_model会返回错误信息
-        st.error("未知错误导致模型未能加载。")
+    # No success message here to reduce clutter.
+    # The presence of controls implies success.
+    pass # No explicit success message shown to keep the main page clean.
 
 
-# 仅当模型成功加载时才显示UI控件
+# --- Detection Section (only if model loaded successfully) ---
 if model:
-    # --- 输入控件 ---
+    st.markdown("---") # Visual separator
+
+    # Slider for confidence threshold
     confidence_slider = st.slider(
-        "置信度阈值 (Confidence Threshold)",
+        "选择置信度阈值 (Confidence Threshold)",
         min_value=0.05,
         max_value=1.0,
         value=DEFAULT_CONFIDENCE,
-        step=0.01
+        step=0.01,
+        format="%.2f", # Format to 2 decimal places
+        help="调整此值以控制模型对检测结果的确定程度。值越高，检测结果越可靠，但也可能漏检部分目标。"
     )
 
+    # File Uploader
     uploaded_file = st.file_uploader(
-        "上传图片 (Upload Image)",
-        type=["jpg", "jpeg", "png"]
+        "📷 上传图片进行检测 (支持JPG, JPEG, PNG)",
+        type=["jpg", "jpeg", "png"],
+        help="请上传一张包含餐盘的图片。单文件大小限制在 200MB 以内。"
     )
 
     if uploaded_file is not None:
-        # 将上传的文件转换为PIL Image对象
         try:
             image_input_pil = PIL.Image.open(uploaded_file)
+            st.session_state['uploaded_image'] = image_input_pil # Store in session state
         except Exception as e:
-            st.error(f"无法打开上传的图片文件: {e}")
-            image_input_pil = None
+            st.error(f"❌ **图片加载失败！** 无法打开上传的图片文件: {e}")
+            st.session_state['uploaded_image'] = None
 
-        if image_input_pil:
-            st.image(image_input_pil, caption="您上传的图片 (Uploaded Image)", use_column_width=True)
+        if 'uploaded_image' in st.session_state and st.session_state['uploaded_image'] is not None:
+            # Display uploaded image
+            st.image(st.session_state['uploaded_image'], caption="✅ 已上传图片", use_column_width=True)
 
-            # 添加一个按钮来触发检测，避免每次调整滑块都重新检测
-            if st.button("开始检测 (Detect Plates)"):
-                with st.spinner("正在检测中..."): # 显示加载状态
-                    # logger.info(f"Streamlit: 接收到图片，使用置信度 {confidence_slider} 进行餐盘检测...")
+            # Button to trigger detection
+            col1, col2, col3 = st.columns([1, 2, 1]) # Use columns to center the button
+            with col2:
+                detect_button = st.button("🚀 开始检测 (Detect Plates)", type="primary", use_container_width=True)
+
+            if detect_button:
+                with st.spinner("⏳ 正在分析图片，请稍候..."):
                     try:
-                        # 使用 YOLO 模型进行预测
-                        results = model.predict(source=image_input_pil, conf=confidence_slider, save=False, verbose=False)
+                        # Perform prediction
+                        results = model.predict(source=st.session_state['uploaded_image'], conf=confidence_slider, save=False, verbose=False)
 
-                        # 检查是否有检测结果
+                        # Check if any objects were detected
                         if results and len(results) > 0 and results[0].boxes is not None and len(results[0].boxes) > 0:
-                            annotated_image_np = results[0].plot() # 返回一个带有标注的 NumPy 数组 (RGB格式)
-                            annotated_image_pil = PIL.Image.fromarray(annotated_image_np) # 转换回 PIL Image
-                            # logger.info("Streamlit: 检测完成，显示标注后的图片。")
-                            st.image(annotated_image_pil, caption="检测结果 (Detection Result)", use_column_width=True)
+                            num_detections = len(results[0].boxes)
+                            annotated_image_np = results[0].plot() # Returns annotated NumPy array (RGB)
+                            annotated_image_pil = PIL.Image.fromarray(annotated_image_np) # Convert back to PIL Image
+
+                            st.success(f"🎉 成功检测到 **{num_detections}** 个餐盘！")
+                            st.image(annotated_image_pil, caption="✨ 检测结果 (Annotated Image)", use_column_width=True)
                         else:
-                            # logger.info("Streamlit: 未检测到任何物体，或结果为空。显示原始图片。")
-                            st.info("未检测到任何物体，或检测结果为空。")
-                            # st.image(image_input_pil, caption="未检测到物体 (No Detections)", use_column_width=True) # 可选：再次显示原图
+                            st.info("🤷‍♀️ 未检测到任何餐盘。您可以尝试：\n- 降低置信度阈值\n- 上传背景更简洁的图片")
+                            # Optionally display original image again if no detections
+                            # st.image(st.session_state['uploaded_image'], caption="未检测到物体 (No Detections)", use_column_width=True)
                     except Exception as e:
-                        # logger.error(f"Streamlit: 在检测过程中发生错误: {e}")
-                        st.error(f"处理图像时发生严重错误: {e}")
+                        st.error(f"💔 **检测过程中发生错误！** 详细信息：{e}")
     else:
-        st.info("请上传一张图片进行检测。")
+        st.info("⬆️ 请在上方区域上传一张图片，然后点击 '开始检测'。")
 
-# --- 如何运行 Streamlit 应用的说明 ---
-st.sidebar.header("如何运行")
-st.sidebar.markdown
+# --- Footer or About Section (Optional) ---
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: gray;">
+    <p>💡 本应用作为课程作业，旨在展示YOLOv8在特定目标检测中的应用。</p>
+    <p><i>开发: [你的姓名/学号]</i></p>
+</div>
+""", unsafe_allow_html=True)
 
+
+# --- Sidebar for Course Information / Instructions ---
+st.sidebar.header("📚 关于此项目")
+st.sidebar.markdown("""
+此Streamlit应用是[你的课程名称/代号]的[你的作业类型，如：期末项目/实验报告]。
+旨在展示如何利用预训练的YOLOv8模型进行餐盘目标检测，并将其部署为交互式Web应用。
+""")
+
+st.sidebar.header("🛠️ 如何运行 (仅供参考)")
+st.sidebar.markdown("""
+1.  **文件结构:** 确保 `app_streamlit.py`, `requirements.txt`, 和 `yolo11n.pt` 文件位于同一目录下。
+2.  **安装依赖:** 打开终端，导航至该目录，运行：
+    `pip install -r requirements.txt`
+3.  **启动应用:** 在同一终端中，运行：
+    `streamlit run app_streamlit.py`
+4.  **访问:** 应用将在您的默认浏览器中自动打开。
+""")
+st.sidebar.markdown("---")
+st.sidebar.info("模型：`yolo11n.pt` (基于COCO数据集微调或自定义训练)")
+st.sidebar.text("版本: 1.0.0") # You can add a version number
