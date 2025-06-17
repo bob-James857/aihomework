@@ -1,3 +1,9 @@
 [server]
 headless = true # If running on a server without a browser, this is good.
 fileWatcherType = "none" # <-- This is the crucial line for your error
+[theme]
+primaryColor="#4CAF50"        # 主色调，柔和的绿色
+backgroundColor="#F0F2F6"     # 背景色，与CSS中的body背景色保持一致，确保整体统一
+secondaryBackgroundColor="#FFFFFF" # 次级背景色
+textColor="#26272E"           # 文字颜色
+font="sans serif"             # 字体选择
