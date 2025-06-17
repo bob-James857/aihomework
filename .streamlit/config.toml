@@ -1,0 +1,3 @@
+[server]
+headless = true # If running on a server without a browser, this is good.
+fileWatcherType = "none" # <-- This is the crucial line for your error
