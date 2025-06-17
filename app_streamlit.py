@@ -14,8 +14,8 @@ DEFAULT_CONFIDENCE = 0.25
 st.set_page_config(
     page_title="餐盘智能检测 - 课程作业", # A more formal title for a course assignment
     layout="centered", # 'centered' or 'wide'
-    initial_sidebar_state="auto", # 'auto', 'expanded', 'collapsed'
-    icon="🍽️" # Page icon
+    initial_sidebar_state="auto" # 'auto', 'expanded', 'collapsed'
+    # icon="" # Removed icon parameter as per request
 )
 
 # --- Model Loading (Cached for performance) ---
@@ -37,11 +37,11 @@ model, model_load_error_message = load_yolo_model(MODEL_PATH)
 
 # --- Main Application Interface ---
 
-st.title("🍽️ 餐盘智能检测系统")
-st.subheader("基于YOLOv8的图像识别应用") # Add a subheader for more context
+st.title("餐盘智能检测系统") # Removed emoji
+st.subheader("基于YOLO5的图像识别应用") # Add a subheader for more context
 
 st.markdown("""
-本项目是基于YOLOv8目标检测模型开发的餐盘识别应用。
+本项目是基于YOLO5目标检测模型开发的餐盘识别应用。
 上传一张图片，系统将自动检测并标注出图片中的餐盘。
 """, unsafe_allow_html=True) # Using unsafe_allow_html=True for potential future HTML styling if needed
 
@@ -74,7 +74,7 @@ if model:
 
     # File Uploader
     uploaded_file = st.file_uploader(
-        "📷 上传图片进行检测 (支持JPG, JPEG, PNG)",
+        "上传图片进行检测 (支持JPG, JPEG, PNG)", # Removed emoji
         type=["jpg", "jpeg", "png"],
         help="请上传一张包含餐盘的图片。单文件大小限制在 200MB 以内。"
     )
@@ -84,20 +84,20 @@ if model:
             image_input_pil = PIL.Image.open(uploaded_file)
             st.session_state['uploaded_image'] = image_input_pil # Store in session state
         except Exception as e:
-            st.error(f"❌ **图片加载失败！** 无法打开上传的图片文件: {e}")
+            st.error(f"**图片加载失败！** 无法打开上传的图片文件: {e}") # Removed emoji
             st.session_state['uploaded_image'] = None
 
         if 'uploaded_image' in st.session_state and st.session_state['uploaded_image'] is not None:
             # Display uploaded image
-            st.image(st.session_state['uploaded_image'], caption="✅ 已上传图片", use_column_width=True)
+            st.image(st.session_state['uploaded_image'], caption="已上传图片", use_column_width=True) # Removed emoji
 
             # Button to trigger detection
             col1, col2, col3 = st.columns([1, 2, 1]) # Use columns to center the button
             with col2:
-                detect_button = st.button("🚀 开始检测 (Detect Plates)", type="primary", use_container_width=True)
+                detect_button = st.button("开始检测 (Detect Plates)", type="primary", use_container_width=True) # Removed emoji
 
             if detect_button:
-                with st.spinner("⏳ 正在分析图片，请稍候..."):
+                with st.spinner("正在分析图片，请稍候..."): # Removed emoji
                     try:
                         # Perform prediction
                         results = model.predict(source=st.session_state['uploaded_image'], conf=confidence_slider, save=False, verbose=False)
@@ -108,43 +108,23 @@ if model:
                             annotated_image_np = results[0].plot() # Returns annotated NumPy array (RGB)
                             annotated_image_pil = PIL.Image.fromarray(annotated_image_np) # Convert back to PIL Image
 
-                            st.success(f"🎉 成功检测到 **{num_detections}** 个餐盘！")
-                            st.image(annotated_image_pil, caption="✨ 检测结果 (Annotated Image)", use_column_width=True)
+                            st.success(f"成功检测到 **{num_detections}** 个餐盘！") # Removed emoji
+                            st.image(annotated_image_pil, caption="检测结果 (Annotated Image)", use_column_width=True) # Removed emoji
                         else:
-                            st.info("🤷‍♀️ 未检测到任何餐盘。您可以尝试：\n- 降低置信度阈值\n- 上传背景更简洁的图片")
+                            st.info("未检测到任何餐盘。您可以尝试：\n- 降低置信度阈值\n- 上传背景更简洁的图片") # Removed emoji
                             # Optionally display original image again if no detections
                             # st.image(st.session_state['uploaded_image'], caption="未检测到物体 (No Detections)", use_column_width=True)
                     except Exception as e:
-                        st.error(f"💔 **检测过程中发生错误！** 详细信息：{e}")
+                        st.error(f"**检测过程中发生错误！** 详细信息：{e}") # Removed emoji
     else:
-        st.info("⬆️ 请在上方区域上传一张图片，然后点击 '开始检测'。")
+        st.info("请在上方区域上传一张图片，然后点击 '开始检测'。") # Removed emoji
 
 # --- Footer or About Section (Optional) ---
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: gray;">
-    <p>💡 本应用作为课程作业，旨在展示YOLOv8在特定目标检测中的应用。</p>
-    <p><i>开发: [你的姓名/学号]</i></p>
+    <p>本项目作为课程作业，旨在展示YOLO5在餐盘目标检测中的应用。</p>
+    <p><i>开发: [pengsen]</i></p>
 </div>
 """, unsafe_allow_html=True)
 
-
-# --- Sidebar for Course Information / Instructions ---
-st.sidebar.header("📚 关于此项目")
-st.sidebar.markdown("""
-此Streamlit应用是[你的课程名称/代号]的[你的作业类型，如：期末项目/实验报告]。
-旨在展示如何利用预训练的YOLOv8模型进行餐盘目标检测，并将其部署为交互式Web应用。
-""")
-
-st.sidebar.header("🛠️ 如何运行 (仅供参考)")
-st.sidebar.markdown("""
-1.  **文件结构:** 确保 `app_streamlit.py`, `requirements.txt`, 和 `yolo11n.pt` 文件位于同一目录下。
-2.  **安装依赖:** 打开终端，导航至该目录，运行：
-    `pip install -r requirements.txt`
-3.  **启动应用:** 在同一终端中，运行：
-    `streamlit run app_streamlit.py`
-4.  **访问:** 应用将在您的默认浏览器中自动打开。
-""")
-st.sidebar.markdown("---")
-st.sidebar.info("模型：`yolo11n.pt` (基于COCO数据集微调或自定义训练)")
-st.sidebar.text("版本: 1.0.0") # You can add a version number
