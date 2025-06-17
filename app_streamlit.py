@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="auto" # 侧边栏状态自动
 )
 
-# --- CSS / 美化代码注入 (卡片式设计) ---
+# --- CSS / 美化代码注入 (移除卡片样式) ---
 st.markdown("""
 <style>
 /* 全局样式调整 */
@@ -30,21 +30,8 @@ body {
     padding: 20px;
 }
 
-/* 自定义卡片样式 */
-.st-card {
-    background-color: #FFFFFF; /* 卡片背景白色 */
-    border-radius: 12px; /* 圆角边框 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 柔和的阴影效果 */
-    padding: 25px; /* 内边距 */
-    margin-bottom: 25px; /* 卡片之间间距 */
-    border: 1px solid #E0E0E0; /* 轻微边框 */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* 悬停动画 */
-}
+/* 删除了自定义卡片样式 .st-card */
 
-.st-card:hover {
-    transform: translateY(-3px); /* 向上轻微浮动 */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); /* 阴影增强 */
-}
 
 /* 主标题美化 */
 h1 {
@@ -125,6 +112,10 @@ hr {
     box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
+/* 滑块样式 (针对具体类名，可能随Streamlit版本变化) */
+/* 一般 Streamlit 默认的滑块已经比较现代化 */
+
+
 /* 页脚样式 */
 .footer {
     text-align: center;
@@ -175,8 +166,8 @@ else:
 
 # --- 检测功能区 ---
 if model:
-    # --- 参数设置卡片 ---
-    st.markdown('<div class="st-card">', unsafe_allow_html=True) # 卡片开始
+    # --- 参数设置 ---
+    # 删除了卡片 div
     st.markdown("#### 参数设置")
     confidence_slider = st.slider(
         "置信度阈值",
@@ -187,12 +178,10 @@ if model:
         format="%.2f",
         help="调整目标检测的置信度阈值。"
     )
-    st.markdown("</div>", unsafe_allow_html=True) # 卡片结束
+    st.markdown("<br>", unsafe_allow_html=True) # 增加垂直间距
     
-    st.markdown("<br>", unsafe_allow_html=True) # 增加卡片间距
-
-    # --- 图片上传与检测卡片 ---
-    st.markdown('<div class="st-card">', unsafe_allow_html=True) # 卡片开始
+    # --- 图片上传与检测 ---
+    # 删除了卡片 div
     st.markdown("#### 图片上传与检测")
     uploaded_file = st.file_uploader(
         "上传图片",
@@ -210,7 +199,7 @@ if model:
 
         if 'uploaded_image' in st.session_state and st.session_state['uploaded_image'] is not None:
             # 显示上传图片
-            st.image(st.session_state['uploaded_image'], caption="上传图片", use_column_width=True)
+            st.image(st.session_state['uploaded_image'], caption="上传图片", use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True) # 增加垂直间距
 
             # 检测按钮
@@ -219,11 +208,10 @@ if model:
                 detect_button = st.button("开始检测", type="primary", use_container_width=True)
 
             if detect_button:
-                st.markdown("</div>", unsafe_allow_html=True) # 图片上传卡片结束
+                st.markdown("---") # 检测结果前加分隔线
                 
-                # --- 检测结果卡片 ---
-                st.markdown("<br>", unsafe_allow_html=True) # 增加卡片间距
-                st.markdown('<div class="st-card">', unsafe_allow_html=True) # 新卡片开始
+                # --- 检测结果 ---
+                # 删除了卡片 div
                 st.markdown("#### 检测结果")
                 with st.spinner("正在执行检测..."):
                     try:
@@ -235,18 +223,17 @@ if model:
                             annotated_image_pil = PIL.Image.fromarray(annotated_image_np)
 
                             st.success(f"检测到 **{num_detections}** 个目标。")
-                            st.image(annotated_image_pil, caption="检测结果", use_column_width=True)
+                            st.image(annotated_image_pil, caption="检测结果", use_container_width=True)
                         else:
                             st.info("未检测到目标。")
                     except Exception as e:
                         st.error(f"**检测过程中发生错误！** 错误详情：{e}")
-                st.markdown("</div>", unsafe_allow_html=True) # 检测结果卡片结束
-            else: # 如果没有点击检测按钮，且图片已上传
-                st.markdown("</div>", unsafe_allow_html=True) # 关闭图片上传卡片
+            # else: # 如果没有点击检测按钮，且图片已上传 - 这里不再需要关闭卡片div
+            #     pass 
 
     else: # 没有上传文件时
         st.info("请上传图片以开始检测。")
-        st.markdown("</div>", unsafe_allow_html=True) # 关闭图片上传卡片
+        # 删除了卡片 div
         
 # --- 底部信息 ---
 st.markdown("""
